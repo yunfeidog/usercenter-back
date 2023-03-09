@@ -6,7 +6,21 @@ spring:
     username: root
     password: 12345678
     url: jdbc:mysql://localhost:3306/user-center
+  session:
+    timeout: 86400 #一天
 server:
   port: 8080
+  servlet:
+      context-path: /api
 
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+  # 逻辑删除配置
+  global-config:
+    db-config:
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      logic-delete-field: isDelete
 

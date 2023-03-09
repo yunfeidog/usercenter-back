@@ -56,3 +56,15 @@ maven依赖
 </dependency>
 ```
 
+
+## 6.commons-lang3
+官网： https://commons.apache.org/proper/commons-lang/  
+工具类   
+maven依赖
+```xml
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-lang3</artifactId>
+    <version>3.12.0</version>
+</dependency>
+```
