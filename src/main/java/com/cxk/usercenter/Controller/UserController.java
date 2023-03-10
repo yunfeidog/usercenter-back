@@ -1,9 +1,12 @@
 package com.cxk.usercenter.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.cxk.usercenter.common.R;
+import com.cxk.usercenter.common.RUtils;
 import com.cxk.usercenter.model.domain.User;
 import com.cxk.usercenter.model.request.UserRegisterRequest;
 import com.cxk.usercenter.service.UserService;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -29,21 +32,23 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/register")
-    public Long userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
+    public R<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null) {
             return null;
         }
         String userAccount = userRegisterRequest.getUserAccount();
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
+        String planetCode = userRegisterRequest.getPlanetCode();
+        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword,planetCode)){
             return null;
         }
-        return userService.userRegister(userAccount, userPassword, checkPassword);
+        long result = userService.userRegister(userAccount, userPassword, checkPassword, planetCode);
+        return RUtils.success(result);
     }
 
     @PostMapping("/login")
-    public User userLogin(@RequestBody UserRegisterRequest userRegisterRequest, HttpServletRequest request) {
+    public R<User> userLogin(@RequestBody UserRegisterRequest userRegisterRequest, HttpServletRequest request) {
         if (userRegisterRequest == null) {
             return null;
         }
@@ -57,36 +62,62 @@ public class UserController {
             log.info("登录成功");
             log.info("登录的用户信息为：{}", request.getSession().getAttribute(USER_LOGIN_STATE));
         }
-        return user;
+        return RUtils.success(user);
+    }
+
+    @PostMapping("/logout")
+    public R<Integer> userLogout(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        Integer result = userService.userLogout(request);
+        return RUtils.success(result);
+    }
+
+    @GetMapping("/current")
+    public R<User> getCurrentUser(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (user == null) {
+            log.warn("获取当前用户信息：用户未登录");
+            return null;
+        }
+        long userId = user.getUserId();
+        //todo:校验用户是否合法
+        User newUser = userService.getById(userId);
+        User safetyUser = userService.getSafetyUser(newUser);
+        return RUtils.success(safetyUser);
     }
 
     @GetMapping("/search")
-    public List<User> searchAllUsers(String username, HttpServletRequest request) {
+    public R<List<User>> searchAllUsers(String username, HttpServletRequest request) {
         if (!isAdmin(request)) {
             log.info("没有权限");
-            return new ArrayList<>();
+            return null;
         }
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
         if (StringUtils.isNotBlank(username)) {
             userQueryWrapper.like("username", username);
         }
         List<User> userList = userService.list(userQueryWrapper);
-        return userList.stream().map( user -> {
+        List<User> users = userList.stream().map(user -> {
             return userService.getSafetyUser(user);
         }).collect(Collectors.toList());
+        return RUtils.success(users);
 
     }
 
     @PostMapping("/delete")
-    public boolean deleteUserById(@RequestBody Long id, HttpServletRequest request) {
+    public R<Boolean> deleteUserById(@RequestBody Long id, HttpServletRequest request) {
         if (!isAdmin(request)) {
-            return false;
+            return null;
         }
         if (id <= 0) {
             log.info("用户的ID不合法");
-            return false;
+            return null;
         }
-        return userService.removeById(id);
+        boolean result = userService.removeById(id);
+        return RUtils.success(result);
     }
 
 
@@ -100,8 +131,9 @@ public class UserController {
         User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (user == null) {
             log.info("没有登录");
+            return false;
         }
-        log.info("用户已登录，权限已查询，权限状态为："+(user.getUserRole()==ADMIN_ROLE?"管理员":"普通用户"));
+        log.info("用户已登录，权限已查询，权限状态为：" + (user.getUserRole() == ADMIN_ROLE ? "管理员" : "普通用户"));
         return user != null && user.getUserRole() == ADMIN_ROLE;
     }
 

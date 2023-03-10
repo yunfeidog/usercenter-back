@@ -22,7 +22,7 @@ public interface UserService extends IService<User> {
      * @param checkPassword 确认密码
      * @return 1-成功  -1-失败
      */
-    long userRegister(String userAccount, String userPassword, String checkPassword);
+    long userRegister(String userAccount, String userPassword, String checkPassword, String planetCode);
 
 
     /**
@@ -41,5 +41,7 @@ public interface UserService extends IService<User> {
      * @return
      */
     User getSafetyUser(User user);
+
+    Integer  userLogout(HttpServletRequest request);
 
 }

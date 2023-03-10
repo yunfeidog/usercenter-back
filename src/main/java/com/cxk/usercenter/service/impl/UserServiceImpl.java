@@ -33,9 +33,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     private UserMapper userMapper;
 
     @Override
-    public long userRegister(String userAccount, String userPassword, String checkPassword) {
+    public long userRegister(String userAccount, String userPassword, String checkPassword, String planetCode) {
         //1.校验账号密码
-        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
+        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword, planetCode)) {
             return -1;
         }
         if (userAccount.length() < 2) {
@@ -46,11 +46,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return -1;
         }
 
+        if (planetCode.length() > 5) {
+            return -1;
+        }
+
+
+
+
 
         //账户不能包含特殊字符
         String validPattern = "[^0-9a-zA-Z_]";
         Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
         if (matcher.find()) {
+            log.info("用户注册失败，账号包含特殊字符");
             return -1;
         }
 
@@ -65,6 +73,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         userQueryWrapper.eq("userAccount", userAccount);
         long count = userMapper.selectCount(userQueryWrapper);
         if (count > 0) {
+            log.info("用户注册失败，用户账号已存在,count={}", count);
+            return -1;
+        }
+
+        //星球编号不能重复
+        userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("planetCode", planetCode);
+        count = userMapper.selectCount(userQueryWrapper);
+        if (count > 0) {
+            log.info("用户注册失败，星球编号已存在,count={}", count);
             return -1;
         }
 
@@ -76,6 +94,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = new User();
         user.setUserAccount(userAccount);
         user.setUserPassword(newPassword);
+        user.setPlanetCode(planetCode);
         boolean save = this.save(user);
         if (save) {
             log.info("用户注册成功，用户id为：{}", user.getUserId());
@@ -131,10 +150,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 用户脱敏
+     *
      * @param user
      * @return
      */
     public User getSafetyUser(User user) {
+        if (user == null) {
+            return null;
+        }
         User safetyUser = new User();
         safetyUser.setUserId(user.getUserId());
         safetyUser.setUsername(user.getUsername());
@@ -146,8 +169,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         safetyUser.setUserStatus(user.getUserStatus());
         safetyUser.setCreateTime(user.getCreateTime());
         safetyUser.setUserRole(user.getUserRole());
+        safetyUser.setPlanetCode(user.getPlanetCode());
         return safetyUser;
     }
+
+    @Override
+    public Integer userLogout(HttpServletRequest request) {
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
+        return 1;
+    }
+
+
 }
 
 
