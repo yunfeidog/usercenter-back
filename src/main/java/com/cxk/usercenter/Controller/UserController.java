@@ -1,19 +1,19 @@
 package com.cxk.usercenter.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.cxk.usercenter.common.ErrorCode;
 import com.cxk.usercenter.common.R;
 import com.cxk.usercenter.common.RUtils;
+import com.cxk.usercenter.exception.BusinessException;
 import com.cxk.usercenter.model.domain.User;
 import com.cxk.usercenter.model.request.UserRegisterRequest;
 import com.cxk.usercenter.service.UserService;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,14 +34,14 @@ public class UserController {
     @PostMapping("/register")
     public R<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAM_ERROR);
         }
         String userAccount = userRegisterRequest.getUserAccount();
         String userPassword = userRegisterRequest.getUserPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
         String planetCode = userRegisterRequest.getPlanetCode();
         if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword,planetCode)){
-            return null;
+            return RUtils.error(ErrorCode.PARAM_ERROR);
         }
         long result = userService.userRegister(userAccount, userPassword, checkPassword, planetCode);
         return RUtils.success(result);
@@ -80,7 +80,7 @@ public class UserController {
         User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
         if (user == null) {
             log.warn("获取当前用户信息：用户未登录");
-            return null;
+            throw new BusinessException(ErrorCode.NO_LOGIN);
         }
         long userId = user.getUserId();
         //todo:校验用户是否合法

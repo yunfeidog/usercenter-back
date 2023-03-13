@@ -2,6 +2,8 @@ package com.cxk.usercenter.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cxk.usercenter.common.ErrorCode;
+import com.cxk.usercenter.exception.BusinessException;
 import com.cxk.usercenter.model.domain.User;
 import com.cxk.usercenter.service.UserService;
 import com.cxk.usercenter.mapper.UserMapper;
@@ -36,18 +38,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public long userRegister(String userAccount, String userPassword, String checkPassword, String planetCode) {
         //1.校验账号密码
         if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword, planetCode)) {
-            return -1;
+            throw new BusinessException(ErrorCode.PARAM_ERROR,"参数为空");
         }
         if (userAccount.length() < 2) {
-            return -1;
+            throw new BusinessException(ErrorCode.PARAM_ERROR,"账号长度过短");
         }
 
         if (userPassword.length() < 2 || checkPassword.length() < 2) {
-            return -1;
+            throw new BusinessException(ErrorCode.PARAM_ERROR,"密码长度过短");
         }
 
         if (planetCode.length() > 5) {
-            return -1;
+            throw new BusinessException(ErrorCode.PARAM_ERROR,"星球编号长度过长");
         }
 
 
